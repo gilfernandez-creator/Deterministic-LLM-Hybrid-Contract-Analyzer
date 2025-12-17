@@ -2,6 +2,11 @@ DealGraph — Deterministic LLM Contract Risk Engine
 
 DealGraph is a hybrid LLM + deterministic system for analyzing commercial contracts, producing auditable risk classifications, policy-driven recommendations, and confidence-bounded outputs.
 
+Why this matters
+Most LLM contract analyzers hallucinate risks and lack testability.
+This system enforces deterministic normalization, policy-gated decisions,
+and reproducible evals — the same principles used in production legal AI systems.
+
 Unlike typical “LLM-only” contract analyzers, DealGraph explicitly separates:
 
 Extraction (probabilistic)
@@ -32,6 +37,22 @@ DealGraph is built to demonstrate how LLMs should actually be used in high-stake
 
 as probabilistic sensors feeding deterministic control logic.
 
+
+## 🧠 System Architecture
+
+```mermaid
+flowchart LR
+    Input[Raw Deal Text] --> Clause[Clause Agent]
+    Clause --> Risk[Risk Agent]
+    Risk --> Normalize[Normalize Agent]
+    Normalize --> Precedent[Precedent Agent]
+    Precedent --> Negotiation[Negotiation Agent]
+    Negotiation --> Judge[Judge Agent]
+    Judge --> Output[Decision + Risk Score + Rationale]
+```
+
+Execution is orchestrated via LangGraph with deterministic normalization and evaluation gates to ensure reproducibility.
+
 High-Level Architecture
 Deal Text
    │
@@ -58,6 +79,16 @@ Judge Agent (Policy + LLM rationale)
    │
    ▼
 Final Recommendation
+
+## 🔍 Evaluation Pipeline
+
+```mermaid
+flowchart TD
+    Cases[cases.jsonl] --> Eval[run_evals.py]
+    Eval --> Graph[DealGraph]
+    Graph --> Results[Scores + Recommendations]
+    Results --> PassFail[Deterministic Assertions]
+```
 
 
 Key idea:
