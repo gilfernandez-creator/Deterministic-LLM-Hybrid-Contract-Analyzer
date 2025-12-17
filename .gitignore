@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+*.pyc
 *.py[cod]
 *.pyo
 *.pyd
@@ -29,6 +30,10 @@ Thumbs.db
 *.log
 *.sqlite3
 *.db
+
+# Secrets
+.env
+.env.*
 
 # LangSmith / misc local
 langsmith.log
