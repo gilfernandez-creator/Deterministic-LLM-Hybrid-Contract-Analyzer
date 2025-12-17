@@ -7,4 +7,5 @@ langgraph>=0.2.0
 # Evals / testing
 pytest>=8.0.0
 langsmith>=0.1.0
+gradio>=4.0
 

@@ -35,7 +35,7 @@ def _classify_risk_line(line: str) -> Dict[str, Any]:
         category = "SLA"
     elif any(k in t for k in ["change", "modify", "discontinue", "features"]):
         category = "Service Changes"
-    elif any(k in t for k in ["fee", "payment", "invoice", "interest", "late"]):
+    elif any(k in t for k in ["fee", "fees", "payment", "invoice", "interest", "late", "price", "pricing", "rate"]):
         category = "Payment"
     elif any(k in t for k in ["ip", "intellectual property", "ownership", "license"]):
         category = "IP"
