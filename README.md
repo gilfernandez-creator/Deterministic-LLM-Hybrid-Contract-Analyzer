@@ -1,4 +1,3 @@
-````markdown
 # DealGraph — Deterministic LLM Contract Risk Engine
 
 **DealGraph** is a hybrid **LLM + deterministic control system** for analyzing commercial contracts.  
@@ -92,15 +91,31 @@ No vibes-based validation.
 ## 🧠 System Architecture
 
 ```mermaid
-flowchart LR
-    Input[Raw Deal Text]
-    Input --> Clause[Clause Agent (LLM)]
-    Clause --> Risk[Risk Agent (LLM → JSON)]
-    Risk --> Normalize[Normalize Node (Deterministic)]
-    Normalize --> Precedent[Precedent Agent]
-    Precedent --> Negotiation[Negotiation Agent]
-    Negotiation --> Judge[Judge Agent (Policy + Rationale)]
-    Judge --> Output[Decision + Risk Score + Rationale]
+flowchart TD
+    A[Raw Deal Text]
+
+    subgraph LLM_Extraction[LLM Extraction Layer]
+        B[Clause Agent]
+        C[Risk Agent - JSON Output]
+    end
+
+    subgraph Deterministic_Core[Deterministic Control Core]
+        D[Normalize Node]
+        G[Judge Policy Engine]
+    end
+
+    subgraph Analysis_Layer[Advisory Analysis]
+        E[Precedent Agent]
+        F[Negotiation Agent]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H[Final Decision and Risk Score]
 ````
 
 Execution is orchestrated using **LangGraph**, with deterministic normalization and evaluation gates to ensure reproducibility.
