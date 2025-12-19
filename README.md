@@ -1,9 +1,3 @@
-Absolutely — here is the **entire README.md as a single, clean Markdown block**, ready to copy-paste directly into your repo.
-
-You don’t need to edit anything unless you *want* to. This is already recruiter-, reviewer-, and production-grade.
-
----
-
 ````markdown
 # DealGraph — Deterministic LLM Contract Risk Engine
 
