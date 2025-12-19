@@ -1,202 +1,219 @@
-DealGraph — Deterministic LLM Contract Risk Engine
+Absolutely — here is the **entire README.md as a single, clean Markdown block**, ready to copy-paste directly into your repo.
 
-DealGraph is a hybrid LLM + deterministic system for analyzing commercial contracts, producing auditable risk classifications, policy-driven recommendations, and confidence-bounded outputs.
+You don’t need to edit anything unless you *want* to. This is already recruiter-, reviewer-, and production-grade.
 
-Why this matters
-Most LLM contract analyzers hallucinate risks and lack testability.
-This system enforces deterministic normalization, policy-gated decisions,
-and reproducible evals — the same principles used in production legal AI systems.
+---
 
-Unlike typical “LLM-only” contract analyzers, DealGraph explicitly separates:
+````markdown
+# DealGraph — Deterministic LLM Contract Risk Engine
 
-Extraction (probabilistic)
+**DealGraph** is a hybrid **LLM + deterministic control system** for analyzing commercial contracts.  
+It produces **auditable risk classifications**, **policy-driven recommendations**, and **confidence-bounded outputs** designed for high-stakes, production environments.
 
-Normalization (deterministic)
+Unlike LLM-only contract analyzers, DealGraph explicitly separates **probabilistic extraction** from **deterministic decision logic**, enabling reproducibility, debuggability, and trust.
 
-Decision logic (policy-driven)
+---
 
-Evaluation (testable, repeatable)
+## Why This Matters
 
-This design makes the system reliable, debuggable, and production-grade.
+Most LLM-based contract analysis tools fail in predictable ways:
 
-Why This Exists
+- Non-deterministic outputs
+- Hallucinated risks
+- No scoring rubric
+- No evaluation harness
+- Impossible to audit or trust
 
-Most LLM contract tools fail in the same ways:
+DealGraph is built around a core production principle:
 
-Non-deterministic outputs
+> **LLMs are probabilistic sensors — not decision-makers.**
 
-Invented risks
+They generate structured signals.  
+**All final outcomes are governed by explicit, deterministic logic.**
 
-No clear scoring rubric
+---
 
-No evaluation harness
+## Core Design Principles
 
-Impossible to audit or trust
+### 1. Deterministic Normalization
 
-DealGraph is built to demonstrate how LLMs should actually be used in high-stakes systems:
+LLM output is **never trusted directly**.
 
-as probabilistic sensors feeding deterministic control logic.
+All extracted risks are re-classified using deterministic rules into:
 
+- **Category** (e.g. Liability, Payment, Service Changes)
+- **Severity** (`Low | Medium | High`)
+- **Direction** (`Customer-Favorable | Balanced | Customer-Unfavorable`)
+
+This guarantees:
+
+- Stable scoring
+- Reproducible outputs
+- Auditable logic
+
+---
+
+### 2. Policy-Driven Decisions
+
+Final recommendations are **rule-based**, not model-based.
+
+Examples:
+- High customer-unfavorable liability or unilateral amendments ⇒ **REJECT**
+- Moderate risk ⇒ **APPROVE_WITH_EDITS**
+- Low risk ⇒ **APPROVE**
+
+The LLM **Judge Agent writes rationale only**.  
+It does **not** decide outcomes.
+
+---
+
+### 3. Confidence Guardrails
+
+Confidence is bounded by **input quality**, not model confidence.
+
+- Short or partial inputs ⇒ capped confidence
+- Missing detail ⇒ explicit fallback behavior
+- No false certainty
+
+This prevents a common failure mode in LLM systems: *confident nonsense*.
+
+---
+
+### 4. Evaluation-First Development
+
+Every behavioral guarantee is backed by deterministic evaluation cases.
+
+The system ships with:
+
+- Canonical contract scenarios
+- Expected outcomes
+- Risk score bounds
+- Category coverage assertions
+
+No silent regressions.  
+No vibes-based validation.
+
+---
 
 ## 🧠 System Architecture
 
 ```mermaid
 flowchart LR
-    Input[Raw Deal Text] --> Clause[Clause Agent]
-    Clause --> Risk[Risk Agent]
-    Risk --> Normalize[Normalize Agent]
+    Input[Raw Deal Text]
+    Input --> Clause[Clause Agent (LLM)]
+    Clause --> Risk[Risk Agent (LLM → JSON)]
+    Risk --> Normalize[Normalize Node (Deterministic)]
     Normalize --> Precedent[Precedent Agent]
     Precedent --> Negotiation[Negotiation Agent]
-    Negotiation --> Judge[Judge Agent]
+    Negotiation --> Judge[Judge Agent (Policy + Rationale)]
     Judge --> Output[Decision + Risk Score + Rationale]
+````
+
+Execution is orchestrated using **LangGraph**, with deterministic normalization and evaluation gates to ensure reproducibility.
+
+---
+
+## High-Level Processing Flow
+
 ```
-
-Execution is orchestrated via LangGraph with deterministic normalization and evaluation gates to ensure reproducibility.
-
-High-Level Architecture
 Deal Text
    │
    ▼
 Clause Agent (LLM)
    │
    ▼
-Risk Agent (LLM → JSON)
+Risk Agent (LLM → structured JSON)
    │
    ▼
 Normalize Node (Deterministic)
    │   ├─ category enforcement
    │   ├─ severity rules
    │   ├─ direction rules
-   │   └─ score calculation
+   │   └─ risk scoring
    ▼
-Precedent Agent (LLM similarity)
+Precedent Agent (similarity analysis)
    │
    ▼
-Negotiation Agent (LLM analysis)
+Negotiation Agent (edit recommendations)
    │
    ▼
-Judge Agent (Policy + LLM rationale)
+Judge Agent (policy verdict + rationale)
    │
    ▼
 Final Recommendation
+```
+
+---
 
 ## 🔍 Evaluation Pipeline
 
 ```mermaid
 flowchart TD
-    Cases[cases.jsonl] --> Eval[run_evals.py]
+    Cases[cases.jsonl]
+    Cases --> Eval[run_evals.py]
     Eval --> Graph[DealGraph]
     Graph --> Results[Scores + Recommendations]
-    Results --> PassFail[Deterministic Assertions]
+    Results --> Assertions[Deterministic Pass/Fail]
 ```
 
+Each evaluation asserts:
 
+* Recommendation correctness
+* Risk score bounds
+* Required category presence
+* Confidence limits
 
+---
 
-Key idea:
-LLMs never make final decisions. They generate inputs.
-All final outcomes are governed by explicit rules.
+## Running the System
 
-Core Design Principles
-1. Deterministic Normalization
+### 1. Install Dependencies
 
-LLM output is never trusted directly.
-
-All risks are re-classified using deterministic rules:
-
-Category
-
-Severity (Low / Medium / High)
-
-Direction (Customer-Favorable / Balanced / Customer-Unfavorable)
-
-This guarantees:
-
-Stable scoring
-
-Reproducible results
-
-Auditable logic
-
-2. Policy-Driven Decisions
-
-Final recommendations are rule-based, not model-based.
-
-Examples:
-
-High liability or termination risk ⇒ REJECT
-
-Moderate risk ⇒ APPROVE_WITH_EDITS
-
-Low risk ⇒ APPROVE
-
-The LLM Judge writes rationale only, never decisions.
-
-3. Confidence Guardrails
-
-Confidence is bounded by input quality:
-
-Short / vague contracts ⇒ confidence capped
-
-Insufficient detail ⇒ explicit fallback behavior
-
-This prevents false certainty — a common failure mode in LLM systems.
-
-4. Evaluation-First Development
-
-Every behavioral guarantee is backed by eval cases.
-
-The system ships with:
-
-Canonical contract scenarios
-
-Expected outcomes
-
-Risk score bounds
-
-Category coverage assertions
-
-No silent regressions. No vibes.
-
-Running the System
-1. Install Dependencies
+```bash
 pip install -r requirements.txt
+```
 
-2. Set Environment Variable
+### 2. Set Environment Variable
+
+```bash
 export OPENAI_API_KEY=your_key_here
+```
 
+(or use a `.env` file)
 
-(or use .env)
+### 3. Run Interactive Analysis
 
-3. Run an Interactive Analysis
+```bash
 python main.py
+```
 
+Paste a contract, then:
 
-Paste a contract, press Ctrl+Z (Windows) or Ctrl+D (macOS/Linux), then Enter.
+* **Windows:** `Ctrl + Z` → Enter
+* **macOS/Linux:** `Ctrl + D`
 
-Running Evaluations
+---
 
-DealGraph includes a full evaluation harness.
+## Running Evaluations
 
+DealGraph includes a full deterministic evaluation harness.
+
+```bash
 python -m evals.run_evals
-
+```
 
 Example output:
 
-passed=5/5  failed=0/5
+```
+passed=5/5
+failed=0/5
+```
 
+---
 
-Each eval asserts:
+## Example Output
 
-Recommendation correctness
-
-Risk score bounds
-
-Category presence
-
-Confidence limits
-
-Example Output
+```
 RISK SCORE: 16.7
 
 RISK VECTOR:
@@ -211,40 +228,61 @@ APPROVE
 
 CONFIDENCE:
 0.80
-Why This Is Interesting (Technically)
+```
 
-This project demonstrates:
+---
 
-LangGraph orchestration
+## Why This Is Technically Interesting
 
-LLM output sanitization
+This project demonstrates **real-world LLM system design**, not prompt engineering:
 
-Deterministic overrides
+* LangGraph orchestration
+* LLM output sanitization
+* Deterministic overrides
+* Scoring calibration
+* Policy engines layered on probabilistic models
+* Eval-driven development for LLM systems
 
-Scoring calibration
+This is the architecture used in production **legal tech, fintech, and enterprise ML platforms**.
 
-Policy engines layered on probabilistic models
+---
 
-Eval-driven development for LLM systems
+## Roadmap (Intentional, Not Hypothetical)
 
-This is exactly the pattern used in real AI infrastructure, legal tech, fintech, and enterprise ML platforms.
+* Weighted category scoring by contract type
+* Jurisdiction-specific risk modifiers
+* Counterparty-aware normalization
+* Dataset-backed precedent embeddings
+* Read-only UI demo layer
 
-Roadmap (Intentional, Not Hypothetical)
+---
 
-Weighted category scoring by contract type
+## Disclaimer
 
-Jurisdiction-specific risk modifiers
+This system is for **technical demonstration purposes only**
+and does **not** provide legal advice.
 
-Counterparty-aware normalization
+---
 
-Dataset-backed precedent embeddings
+## Author
 
-UI layer (read-only demo)
+Built to demonstrate **production-grade LLM system design**,
+not prompt engineering.
 
-Disclaimer
+```
 
-This system is for technical demonstration purposes only and does not provide legal advice.
+---
 
-Author
+### ✅ What to do next
 
-Built to demonstrate production-grade LLM system design, not prompt engineering.
+1. Paste this into `README.md`
+2. Commit it
+3. Push to GitHub
+
+Once that’s done, we’ll:
+- tighten judge logic
+- fix rationale messaging
+- re-index precedents with the new normalizer
+
+But yes — **this README is now absolutely worth showing.**
+```

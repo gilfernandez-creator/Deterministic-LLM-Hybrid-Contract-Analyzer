@@ -17,6 +17,61 @@ CATEGORIES = [
     "Other",
 ]
 
+
+ALLOWED_SEVERITIES = {"Low", "Medium", "High"}
+ALLOWED_DIRECTIONS = {
+    "Balanced",
+    "Customer-Favorable",
+    "Customer-Unfavorable",
+    "Provider-Favorable",
+    "Provider-Unfavorable",
+    "Neutral",
+}
+
+def _normalize_direction(d: str) -> str:
+    if not d:
+        return "Balanced"
+    d = d.strip()
+
+    mapping = {
+        "Neutral": "Balanced",
+        "Mutual": "Balanced",
+        "Customer Unfavorable": "Customer-Unfavorable",
+        "Customer Favorable": "Customer-Favorable",
+        "Provider Unfavorable": "Provider-Unfavorable",
+        "Provider Favorable": "Provider-Favorable",
+    }
+    d = mapping.get(d, d)
+
+    # If someone returns "Unfavorable" with no party, don't guess.
+    if d not in ALLOWED_DIRECTIONS:
+        return "Balanced"
+    return d
+
+def _normalize_severity(s: str) -> str:
+    if not s:
+        return "Medium"
+    s = s.strip().title()
+    if s not in ALLOWED_SEVERITIES:
+        return "Medium"
+    return s
+
+def _normalize_category(c: str) -> str:
+    if not c:
+        return "Other"
+    c = str(c).strip()
+
+    # handle multi-label like "Liability|Service Changes|Jurisdiction"
+    parts = re.split(r"[|,]", c)
+    parts = [p.strip() for p in parts if p.strip()]
+
+    # choose first recognized category in your canonical set
+    for p in parts:
+        for cat in CATEGORIES:
+            if p.lower() == cat.lower():
+                return cat
+    return "Other"
+
 def _severity_points(sev: str) -> int:
     return {"Low": 1, "Medium": 3, "High": 6}.get(sev, 2)
 
@@ -246,11 +301,11 @@ def normalize_agent_outputs(state: DealGraphState) -> Dict:
     deal.clauses = normalized_clauses
 
     # -------------------------
-# 2) Normalize Risks -> risk_items + risk_vector + risk_score
-# -------------------------
-        # -------------------------
-    # 2) Normalize Risks (JSON-first)
+    # 2) Normalize Risks -> risk_items + risk_vector + risk_score
     # -------------------------
+    
+    # 2) Normalize Risks (JSON-first)
+
     risk_raw = state.get("risk_analysis") or ""
     risk_list = _parse_risk_analysis(risk_raw)
 
@@ -268,19 +323,57 @@ def normalize_agent_outputs(state: DealGraphState) -> Dict:
         if key and key not in extracted_risks:
             extracted_risks[key] = (risk_text or evidence)
 
-        # ✅ deterministic overwrite (don’t trust LLM severity)
+                # deterministic baseline (source of truth)
         det = _classify_risk_line(evidence or risk_text)
+
+        # LLM hints (ONLY category is potentially useful)
+        llm_cat = _normalize_category(r.get("category"))
+        llm_sev = _normalize_severity(r.get("severity"))
+        llm_dir = _normalize_direction(r.get("direction"))
+
+        # Category: allow LLM to override ONLY if it's canonical
+        category = llm_cat if llm_cat != "Other" else det["category"]
+
+        # Severity & direction: deterministic wins
+        severity = det["severity"]
+        direction = det["direction"]
+
+        # Optional: allow LLM to nudge severity up by ONE level only
+        rank = {"Low": 1, "Medium": 2, "High": 3}
+        if det["category"] != "Other" and rank[llm_sev] > rank[severity]:
+            if rank[llm_sev] - rank[severity] == 1:
+                severity = llm_sev
+
+        # Deterministic hard override: absurdly low liability caps
+        if category == "Liability":
+            m = re.search(r"\$\s*(\d+)", (evidence or "").lower())
+            if m:
+                amt = int(m.group(1))
+                if amt <= 1000:
+                    severity = "High"
+                    direction = "Customer-Unfavorable"
+
+
+        # 3) deterministic "upgrade" for obvious patterns the LLM might miss
+        if category == "Liability":
+            m = re.search(r"\$\s*(\d+)", (evidence or "").lower())
+            if m:
+                amt = int(m.group(1))
+                if amt <= 1000:
+                    severity = "High"
+                    direction = "Customer-Unfavorable"
+
         risk_items.append({
-            "category": det["category"],
-            "severity": det["severity"],
-            "direction": det["direction"],
-            "evidence": det["evidence"],
-            # optional: keep LLM output for audit/debug
+            "category": category,
+            "severity": severity,
+            "direction": direction,
+            "evidence": (evidence or "").strip(),
             "llm_category": r.get("category"),
             "llm_severity": r.get("severity"),
             "llm_direction": r.get("direction"),
             "llm_risk": risk_text,
-    })
+        })
+
 
 
     # risk_vector: category -> highest severity seen
