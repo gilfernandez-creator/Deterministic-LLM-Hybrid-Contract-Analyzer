@@ -264,19 +264,3 @@ Built to demonstrate **production-grade LLM system design**,
 not prompt engineering.
 
 ```
-
----
-
-### ✅ What to do next
-
-1. Paste this into `README.md`
-2. Commit it
-3. Push to GitHub
-
-Once that’s done, we’ll:
-- tighten judge logic
-- fix rationale messaging
-- re-index precedents with the new normalizer
-
-But yes — **this README is now absolutely worth showing.**
-```
